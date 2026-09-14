@@ -147,7 +147,10 @@ report_tunnel() {
 case "${1:-status}" in
 start)
 	uci -q set qwdtt.main.enabled='1'; uci -q commit qwdtt
-	/etc/init.d/qwdtt restart && echo "qwdtt: started (enabled at boot)"
+	# start, not restart: procd's restart stops first, and stopping a service
+	# that is not registered makes it print "ubus call service delete (Not
+	# found)" on stderr, which the LuCI page then shows as a failed command.
+	/etc/init.d/qwdtt start && echo "qwdtt: started (enabled at boot)"
 	;;
 stop)
 	uci -q set qwdtt.main.enabled='0'; uci -q commit qwdtt
