@@ -40,6 +40,9 @@ jobs:
         id: discover
         run: |
           set -eu
+          # The script runs in a pipeline below, where set -e alone would let a
+          # failure through as an empty matrix instead of a red job.
+          set -o pipefail
           map=.github/openwrt-targets.json
           ipk=$(jq -r '."24.10".version' "$map")
           apk=$(jq -r '."25.12".version' "$map")
