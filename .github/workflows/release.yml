@@ -25,7 +25,6 @@ jobs:
     uses: ./.github/workflows/build.yml
     permissions:
       contents: read
-      packages: read
     secrets: inherit
 
   # A signed apk repository, which is the only way a LuCI-only user can install
@@ -166,7 +165,7 @@ jobs:
           }
 
           docker run --rm --user 0:0 -e IPK_PRIVATE_KEY \
-            -v "$PWD:/w" -w /w "ghcr.io/${{ github.repository }}/sdk:${{ needs.build.outputs.ipk_sdk }}" \
+            -v "$PWD:/w" -w /w "ghcr.io/openwrt/sdk:${{ needs.build.outputs.ipk_sdk }}" \
             sh -c 'set -e
                    # The tight umask covers the key and nothing else. Applied
                    # to the whole block it also lands on Packages, which the
@@ -200,7 +199,7 @@ jobs:
                    done'
 
           docker run --rm -v "$PWD:/w" -w /w \
-            "ghcr.io/${{ github.repository }}/sdk:${{ needs.build.outputs.ipk_sdk }}" \
+            "ghcr.io/openwrt/sdk:${{ needs.build.outputs.ipk_sdk }}" \
             sh -c 'u=/builder/staging_dir/host/bin/usign
                    echo "usign key id: $($u -F -p /w/keys/qwdtt-usign.pub)"
                    for i in /w/site/releases/24.10/*/Packages; do
