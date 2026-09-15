@@ -11,7 +11,7 @@
 # zero approvals, but raising that count makes it a bypass worth replacing
 # with a PAT.
 ---
-name: Prepare release
+name: Bump version
 
 on:
   workflow_dispatch:
