@@ -101,6 +101,9 @@ jobs:
     needs: version
     if: needs.version.outputs.build == 'true'
     uses: ./.github/workflows/build.yml
+    # Everything, not what the diff suggests: this run publishes the result.
+    with:
+      full: true
     permissions:
       contents: read
     secrets: inherit
