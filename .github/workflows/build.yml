@@ -226,6 +226,9 @@ jobs:
           - name: mipsel
             goarch: mipsle
             gomips: softfloat
+          - name: mips
+            goarch: mips
+            gomips: softfloat
 
     steps:
       - name: Check out

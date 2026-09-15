@@ -63,10 +63,10 @@ OpenWrt 25.x, `opkg` на 24.10.
    System -> Backup / Flash Firmware -> "Restore". Он кладет публичный ключ в
    `/etc/opkg/keys` под именем его key id.
 2. Добавьте feed. В System -> Software -> Configuration допишите строку для
-   своей архитектуры, например для `mipsel_24kc`:
+   своей архитектуры, например для `mips_24kc`:
 
    ```
-   src/gz qwdtt https://romankuznetsov.github.io/qwdtt-openwrt/releases/24.10/mipsel_24kc
+   src/gz qwdtt https://romankuznetsov.github.io/qwdtt-openwrt/releases/24.10/mips_24kc
    ```
 
    Сохраните, затем нажмите "Update lists…".
@@ -155,5 +155,6 @@ ip route show table 51820
 | `aarch64` | современные ARM64-роутеры |
 | `armv7` | 32-битные ARMv7-устройства |
 | `mipsel` | MIPS little-endian, в основном ramips |
+| `mips` | MIPS big-endian, в основном ath79 и lantiq |
 
 Перед скачиванием можно проверить архитектуру командой `uname -m`.
