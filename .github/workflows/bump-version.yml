@@ -1,8 +1,10 @@
 # Raises PKG_VERSION in the three packages together and opens the release pull
-# request. Run it, merge the pull request, then tag the merged commit.
+# request. Merging that request is the whole release: Release runs on the push
+# to main and creates the tag itself, once the build and the feed have passed.
 #
-# The tag is deliberately not pushed here: main takes pull requests only, so the
-# commit a tag must point at does not exist until a person has merged.
+# Nothing is tagged here. main takes pull requests only, so the commit a tag
+# must point at does not exist until a person has merged, and a tag pushed by a
+# workflow could not start Release anyway.
 #
 # Needs "Allow GitHub Actions to create and approve pull requests" enabled on
 # the repository, or the gh pr create below fails outright. That is one toggle
@@ -10,7 +12,7 @@
 # zero approvals, but raising that count makes it a bypass worth replacing
 # with a PAT.
 ---
-name: Bump version
+name: Prepare release
 
 on:
   workflow_dispatch:
@@ -126,4 +128,4 @@ jobs:
             --body "Raises PKG_VERSION to $new in qwdtt, qwdtt-client and
           luci-app-qwdtt, and resets PKG_RELEASE to 1.
 
-          Merge this, then tag the merged commit \`v$new\` to publish."
+          Merging this publishes $new: Release runs on the merge and tags it."
