@@ -3,8 +3,7 @@
 # to main and creates the tag itself, once the build and the feed have passed.
 #
 # Nothing is tagged here. main takes pull requests only, so the commit a tag
-# must point at does not exist until a person has merged, and a tag pushed by a
-# workflow could not start Release anyway.
+# must point at does not exist until a person has merged.
 #
 # Needs "Allow GitHub Actions to create and approve pull requests" enabled on
 # the repository, or the gh pr create below fails outright. That is one toggle
