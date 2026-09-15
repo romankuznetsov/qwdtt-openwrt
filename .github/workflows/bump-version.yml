@@ -113,10 +113,6 @@ jobs:
           git commit -qam "release: $new"
           git push -q origin "release/v$new"
 
-          # English, unlike every other pull request here: this one is opened by
-          # a workflow and read only by whoever releases, never by the users the
-          # Russian rule is for.
-          #
           # Build does run on this pull request, but only as far as the
           # changes job lets it: a release/v* branch is a version bump by
           # construction, and the release that follows the merge rebuilds

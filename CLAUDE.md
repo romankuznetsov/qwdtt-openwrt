@@ -66,8 +66,16 @@ the file is gone.
 Code, comments, identifiers, log output and docs are English. No em dashes;
 use `-`.
 
-Talking to people is Russian: issue and pull request titles and bodies, and
-every comment on them. The users and contributors of this project are mostly
-Russian-speaking, so that is where they read. The split is by audience, not by
-file -- an English PR describing a Russian-facing change reaches the wrong
-people, and a Russian identifier in the code reaches nobody at all.
+Issues are Russian: their titles, their bodies, and every comment on them.
+That is where users arrive, and the users of this project are mostly
+Russian-speaking, so it is the one place worth meeting them in their own
+language.
+
+Pull requests are English, titles and bodies alike, along with their review
+comments. A pull request argues about the code it changes, in the same
+terms as the code, and is read by whoever maintains the repository rather
+than by whoever installs it.
+
+The split is by audience, not by file: a Russian identifier in the code
+reaches nobody at all, and a Russian issue reply reaches exactly the person
+who asked.
