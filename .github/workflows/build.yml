@@ -99,6 +99,28 @@ jobs:
             esac
           fi
 
+          # The merge of that same bump lands here as a push, and its diff is
+          # the three Makefiles, so the gate below would build the packages a
+          # second time. release.yml runs on this very push and calls this
+          # workflow with full: true, which is the copy that gets published --
+          # 35 minutes of the two packages jobs, for artifacts nobody reads.
+          #
+          # An unreleased version in the tree is exactly the condition
+          # release.yml uses to decide it is publishing, so ask the same
+          # question. The called run never reaches here: full: true returns
+          # above.
+          if [ "${{ github.event_name }}" = "push" ] &&
+             [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            v=$(sed -n 's/^PKG_VERSION:=[[:space:]]*//p' qwdtt/Makefile |
+                tr -d '[:space:]')
+            if [ -n "$v" ] && ! git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
+              echo "v$v is unreleased; the Release run on this push builds it"
+              echo "code=false" >> "$GITHUB_OUTPUT"
+              echo "packages=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
           # main takes pull requests only, so gating pushes alone would gate
           # almost nothing: every change now arrives as a pull request.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
