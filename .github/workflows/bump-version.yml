@@ -115,12 +115,14 @@ jobs:
           # a workflow and read only by whoever releases, never by the users the
           # Russian rule is for.
           #
-          # A pull request opened with GITHUB_TOKEN does not start the build
-          # workflow, so this one arrives without checks. Nothing downstream
-          # rechecks that the tag matches these three files either, so read the
-          # diff before merging.
+          # Opened with GITHUB_TOKEN, so GitHub refuses to run workflows for it:
+          # the Build check appears and fails with no jobs at all. That is the
+          # recursion guard, not a broken build, and a job-level `if:` cannot
+          # suppress it because nothing runs. Give this step a PAT if the red
+          # check matters. Read the diff before merging either way: nothing
+          # downstream rechecks the tag against these three files.
           gh pr create --base main --head "release/v$new" \
-            --title "Release $new" \
+            --title "release: $new" \
             --body "Raises PKG_VERSION to $new in qwdtt, qwdtt-client and
           luci-app-qwdtt, and resets PKG_RELEASE to 1.
 
