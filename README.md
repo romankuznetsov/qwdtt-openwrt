@@ -155,5 +155,6 @@ ip route show table 51820
 | `aarch64` | современные ARM64-роутеры |
 | `armv7` | 32-битные ARMv7-устройства |
 | `mipsel` | MIPS little-endian, в основном ramips |
+| `mips` | MIPS big-endian, в основном ath79 и lantiq |
 
 Перед скачиванием можно проверить архитектуру командой `uname -m`.
