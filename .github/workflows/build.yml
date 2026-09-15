@@ -8,9 +8,9 @@
 #   packages           ~8 min, only when a package directory changed
 #   client-packages    ~6 min per architecture, tags and dispatch only
 #
-# The SDK arrives already unpacked, from the images sdk-images.yml publishes,
-# so a job no longer opens by downloading it. Most of what is left is the
-# kernel build that +kmod-tun pulls in.
+# Every SDK job opens by downloading and unpacking the SDK from upstream's
+# image, which is most of its wall clock; the rest is the kernel build that
+# +kmod-tun pulls in.
 ---
 name: Build
 
@@ -235,7 +235,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -265,13 +264,6 @@ jobs:
           GOARCH: amd64
         run: go build -tags=openwrt -trimpath -ldflags="-s -w" -o ../qwdtt-client/files/qwdtt-client .
 
-      - name: Log in to ghcr.io
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build with the OpenWrt SDK
         # Pinned, not @main. The action's entrypoint decides how the feed is
         # wired, which packages are built and where the output lands, so
@@ -281,10 +273,11 @@ jobs:
         # statement while both run the same entrypoint.
         uses: openwrt/gh-action-sdk@v11
         env:
-          # Our own image rather than ghcr.io/openwrt/sdk, because the
-          # published ones unpack the SDK at container start instead of
-          # shipping it. See .github/workflows/sdk-images.yml.
-          CONTAINER: ghcr.io/${{ github.repository }}/sdk
+          # Upstream unpacks the SDK at container start, which is most of
+          # this job. Pre-baking it into an image of our own removed that,
+          # at the cost of a package that had to be published and kept
+          # linked to the repository before any build could run at all.
+          CONTAINER: ghcr.io/openwrt/sdk
           ARCH: ${{ matrix.arch }}
           FEEDNAME: qwdtt
           # qwdtt-client is not named here, but qwdtt depends on it, so the SDK
@@ -390,7 +383,6 @@ jobs:
     timeout-minutes: 40
     permissions:
       contents: read
-      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -418,17 +410,10 @@ jobs:
           GOMIPS64: ${{ matrix.gomips64 }}
         run: go build -tags=openwrt -trimpath -ldflags="-s -w" -o ../qwdtt-client/files/qwdtt-client .
 
-      - name: Log in to ghcr.io
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build with the OpenWrt SDK
         uses: openwrt/gh-action-sdk@v11
         env:
-          CONTAINER: ghcr.io/${{ github.repository }}/sdk
+          CONTAINER: ghcr.io/openwrt/sdk
           ARCH: ${{ matrix.sdk }}
           FEEDNAME: qwdtt
           PACKAGES: qwdtt-client
