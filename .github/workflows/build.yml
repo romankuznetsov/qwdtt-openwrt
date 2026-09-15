@@ -77,6 +77,22 @@ jobs:
             exit 0
           fi
 
+          # A release/v* branch carries one thing by construction: PKG_VERSION
+          # in the three Makefiles, which Prepare release has already checked is
+          # x.y.z and which the version job checks again before publishing.
+          # Building it here spent about 18 minutes reproving that, and the
+          # release the merge starts rebuilds all of it anyway, before anything
+          # is published.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            case "${{ github.head_ref }}" in
+            release/v*)
+              echo "version bump only; the release after the merge builds it"
+              echo "code=false" >> "$GITHUB_OUTPUT"
+              echo "packages=false" >> "$GITHUB_OUTPUT"
+              exit 0 ;;
+            esac
+          fi
+
           # main takes pull requests only, so gating pushes alone would gate
           # almost nothing: every change now arrives as a pull request.
           if [ "${{ github.event_name }}" = "pull_request" ]; then

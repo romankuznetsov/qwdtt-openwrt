@@ -3,10 +3,9 @@
 # built.
 #
 # Merging a version bump is the whole ceremony: this runs on the merge, and the
-# tag is created at the end rather than being the thing that starts it. A tag
-# pushed by a workflow cannot start one anyway -- GitHub refuses to trigger on
-# anything GITHUB_TOKEN did -- and creating it last means a release that failed
-# leaves no tag claiming it happened.
+# tag is created at the end rather than being the thing that starts it. That
+# ordering is the point -- a release that failed leaves no tag claiming it
+# happened, which is how a tag once ended up on a commit nobody released.
 ---
 name: Release
 

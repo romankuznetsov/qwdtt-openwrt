@@ -117,12 +117,10 @@ jobs:
           # a workflow and read only by whoever releases, never by the users the
           # Russian rule is for.
           #
-          # Opened with GITHUB_TOKEN, so GitHub refuses to run workflows for it:
-          # the Build check appears and fails with no jobs at all. That is the
-          # recursion guard, not a broken build, and a job-level `if:` cannot
-          # suppress it because nothing runs. Give this step a PAT if the red
-          # check matters. Read the diff before merging either way: nothing
-          # downstream rechecks the tag against these three files.
+          # Build does run on this pull request, but only as far as the
+          # changes job lets it: a release/v* branch is a version bump by
+          # construction, and the release that follows the merge rebuilds
+          # everything before it publishes anything.
           gh pr create --base main --head "release/v$new" \
             --title "release: $new" \
             --body "Raises PKG_VERSION to $new in qwdtt, qwdtt-client and
