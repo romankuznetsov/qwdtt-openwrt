@@ -18,12 +18,15 @@ DISTDIR=dist
 # emits .apk from identical sources. One architecture serves every target
 # because the package sets LUCI_PKGARCH:=all.
 #
-# Both are pinned to a release, matching the workflow. The bare x86_64 tag is
-# the snapshot SDK, which does not ship the SDK inside the image and so
-# downloads and extracts it on every run -- around six times the wall clock,
-# for a moving target that makes a red build ambiguous.
-ARCH_IPK=x86_64-24.10.8
-ARCH_APK=x86_64-25.12.5
+# Both are pinned to a release, read from the same file the workflows read so
+# a local build cannot target a different OpenWrt than CI does. The bare
+# x86_64 tag would be the snapshot SDK, which does not ship the SDK inside the
+# image and so downloads and extracts it on every run -- around six times the
+# wall clock, for a moving target that makes a red build ambiguous.
+TARGET_MAP=$(dirname "$0")/.github/openwrt-targets.json
+command -v jq >/dev/null 2>&1 || { echo "jq is required to read $TARGET_MAP" >&2; exit 1; }
+ARCH_IPK=x86_64-$(jq -r '."24.10".version' "$TARGET_MAP")
+ARCH_APK=x86_64-$(jq -r '."25.12".version' "$TARGET_MAP")
 
 # Git Bash rewrites arguments that look like absolute Unix paths into Windows
 # paths, which would turn the container-side /feed into something like

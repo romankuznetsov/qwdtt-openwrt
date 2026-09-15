@@ -69,13 +69,13 @@ jobs:
       - name: Download the apk packages
         uses: actions/download-artifact@v8
         with:
-          name: packages-x86_64-25.12.5
+          name: packages-${{ needs.build.outputs.apk_sdk }}
           path: staged-apk
 
       - name: Download the ipk packages
         uses: actions/download-artifact@v8
         with:
-          name: packages-x86_64-24.10.8
+          name: packages-${{ needs.build.outputs.ipk_sdk }}
           path: staged-ipk
 
       # The clients can share one directory: an architecture's .ipk and .apk
@@ -133,7 +133,7 @@ jobs:
           # The SDK image carries apk; the action's own image is only this plus
           # an entrypoint, so the base serves here.
           docker run --rm --user 0:0 -e APK_PRIVATE_KEY \
-            -v "$PWD:/w" -w /w ghcr.io/openwrt/sdk:x86_64-25.12.5 \
+            -v "$PWD:/w" -w /w ghcr.io/openwrt/sdk:${{ needs.build.outputs.apk_sdk }} \
             sh -c 'umask 077
                    printf "%s\n" "$APK_PRIVATE_KEY" > /tmp/key.pem
                    for d in /w/site/releases/25.12/*; do
@@ -159,7 +159,7 @@ jobs:
           }
 
           docker run --rm --user 0:0 -e IPK_PRIVATE_KEY \
-            -v "$PWD:/w" -w /w "ghcr.io/${{ github.repository }}/sdk:x86_64-24.10.8" \
+            -v "$PWD:/w" -w /w "ghcr.io/${{ github.repository }}/sdk:${{ needs.build.outputs.ipk_sdk }}" \
             sh -c 'set -e
                    # The tight umask covers the key and nothing else. Applied
                    # to the whole block it also lands on Packages, which the
@@ -185,7 +185,7 @@ jobs:
         run: |
           cp keys/qwdtt.pem site/qwdtt.pem
           cp keys/qwdtt-usign.pub site/qwdtt-usign.pub
-          docker run --rm -v "$PWD:/w" -w /w ghcr.io/openwrt/sdk:x86_64-25.12.5 \
+          docker run --rm -v "$PWD:/w" -w /w ghcr.io/openwrt/sdk:${{ needs.build.outputs.apk_sdk }} \
             sh -c 'mkdir -p /tmp/k && cp /w/keys/qwdtt.pem /tmp/k/
                    for i in /w/site/releases/25.12/*/packages.adb; do
                      printf "%s: " "$i"
@@ -193,7 +193,7 @@ jobs:
                    done'
 
           docker run --rm -v "$PWD:/w" -w /w \
-            "ghcr.io/${{ github.repository }}/sdk:x86_64-24.10.8" \
+            "ghcr.io/${{ github.repository }}/sdk:${{ needs.build.outputs.ipk_sdk }}" \
             sh -c 'u=/builder/staging_dir/host/bin/usign
                    echo "usign key id: $($u -F -p /w/keys/qwdtt-usign.pub)"
                    for i in /w/site/releases/24.10/*/Packages; do

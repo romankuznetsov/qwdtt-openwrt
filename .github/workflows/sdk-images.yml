@@ -15,6 +15,7 @@ on:
       - .github/sdk.Dockerfile
       - .github/workflows/sdk-images.yml
       - .github/scripts/openwrt-arches.sh
+      - .github/openwrt-targets.json
 
 permissions:
   contents: read
@@ -23,10 +24,6 @@ permissions:
 concurrency:
   group: sdk-images
   cancel-in-progress: false
-
-env:
-  # Kept in step with build.yml by hand for now; both name the same releases.
-  OPENWRT_RELEASES: "24.10.8 25.12.5"
 
 jobs:
   arches:
@@ -43,8 +40,10 @@ jobs:
         id: discover
         run: |
           set -eu
-          # shellcheck disable=SC2086
-          list=$(.github/scripts/openwrt-arches.sh $OPENWRT_RELEASES | jq -r .sdk)
+          map=.github/openwrt-targets.json
+          ipk=$(jq -r '."24.10".version' "$map")
+          apk=$(jq -r '."25.12".version' "$map")
+          list=$(.github/scripts/openwrt-arches.sh "$ipk" "$apk" | jq -r .sdk)
           printf '%s\n' "$list"
           printf 'matrix=%s\n' "$(printf '%s\n' "$list" | jq -Rcs 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
 
