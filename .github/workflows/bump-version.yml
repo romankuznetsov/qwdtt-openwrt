@@ -3,6 +3,12 @@
 #
 # The tag is deliberately not pushed here: main takes pull requests only, so the
 # commit a tag must point at does not exist until a person has merged.
+#
+# Needs "Allow GitHub Actions to create and approve pull requests" enabled on
+# the repository, or the gh pr create below fails outright. That is one toggle
+# covering both halves; the approving half grants nothing while main requires
+# zero approvals, but raising that count makes it a bypass worth replacing
+# with a PAT.
 ---
 name: Bump version
 
@@ -48,8 +54,8 @@ jobs:
           MKS="qwdtt/Makefile qwdtt-client/Makefile luci-app-qwdtt/Makefile"
 
           # The three have to agree already. If they do not, the repository is
-          # in a state no single version describes, and papering over it here
-          # would only move the failure to the tag guard.
+          # in a state no single version describes, and a bump would only carry
+          # the disagreement forward under a new number.
           cur=""
           for mk in $MKS; do
             v=$(sed -n 's/^PKG_VERSION:=[[:space:]]*//p' "$mk" | tr -d '[:space:]')
@@ -110,8 +116,9 @@ jobs:
           # Russian rule is for.
           #
           # A pull request opened with GITHUB_TOKEN does not start the build
-          # workflow, so this one arrives without checks. The tag guard and the
-          # release run cover it afterwards.
+          # workflow, so this one arrives without checks. Nothing downstream
+          # rechecks that the tag matches these three files either, so read the
+          # diff before merging.
           gh pr create --base main --head "release/v$new" \
             --title "Release $new" \
             --body "Raises PKG_VERSION to $new in qwdtt, qwdtt-client and

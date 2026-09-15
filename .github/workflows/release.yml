@@ -132,6 +132,13 @@ jobs:
           #
           # The SDK image carries apk; the action's own image is only this plus
           # an entrypoint, so the base serves here.
+          #
+          # The umask covers this whole block, unlike the opkg step below where
+          # it is scoped to the key alone. That is safe only because the chown
+          # afterwards hands packages.adb to the runner before anything reads
+          # it. The opkg index is verified inside a container first, as a
+          # different user, which is exactly what a block-wide umask broke
+          # there -- so do not "tidy" the two into agreement.
           docker run --rm --user 0:0 -e APK_PRIVATE_KEY \
             -v "$PWD:/w" -w /w ghcr.io/openwrt/sdk:${{ needs.build.outputs.apk_sdk }} \
             sh -c 'umask 077
