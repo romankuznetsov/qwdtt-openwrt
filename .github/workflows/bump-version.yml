@@ -1,4 +1,4 @@
-# Raises PKG_VERSION in the three packages together and opens the release pull
+# Bumps PKG_VERSION in the three packages together and opens the release pull
 # request. Merging that request is the whole release: Release runs on the push
 # to main and creates the tag itself, once the build and the feed have passed.
 #
@@ -118,7 +118,7 @@ jobs:
           # everything before it publishes anything.
           gh pr create --base main --head "release/v$new" \
             --title "release: $new" \
-            --body "Raises PKG_VERSION to $new in qwdtt, qwdtt-client and
+            --body "Bumps PKG_VERSION to $new in qwdtt, qwdtt-client and
           luci-app-qwdtt, and resets PKG_RELEASE to 1.
 
           Merging this publishes $new: Release runs on the merge and tags it."
