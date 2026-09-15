@@ -17,6 +17,25 @@ set -eu
 
 [ $# -gt 0 ] || { echo "usage: openwrt-arches.sh <release>..." >&2; exit 2; }
 
+# THE list of architecture families this feed serves. Everything downstream
+# reads it from here -- the build matrix and the feed pages both come out of
+# this script -- so widening coverage is a one-line edit and nothing else has
+# to be kept in step.
+#
+# Shell glob patterns against the pkgarch name. `mips_*` is deliberately absent:
+# that is big-endian MIPS, ath79 and lantiq, which this feed does not serve.
+FAMILIES='x86_64 aarch64_* arm_* mipsel_*'
+
+served() { # <pkgarch> -> 0 when a family matches
+	for pattern in $FAMILIES; do
+		# Unquoted on purpose: $pattern is a glob, not a literal.
+		case "$1" in
+		$pattern) return 0 ;;
+		esac
+	done
+	return 1
+}
+
 # Floating point is the part worth getting right: a hardfloat binary on a
 # softfloat target dies on the first FP instruction, while softfloat runs
 # everywhere and only costs speed. Everything below therefore picks softfloat
@@ -64,7 +83,14 @@ for release in "$@"; do
 
 	[ -n "$arches" ] || { echo "no architectures found for $release" >&2; exit 1; }
 
+	skipped=
 	for arch in $arches; do
+		if ! served "$arch"; then
+			skipped="$skipped $arch"
+			continue
+		fi
+		# Reaching here means a family wants it but Go cannot build it, which
+		# is worth a line of its own rather than being lost in the summary.
 		if ! spec=$(go_env_for "$arch"); then
 			echo "skipping $arch on $release: no Go target" >&2
 			continue
@@ -81,4 +107,7 @@ for release in "$@"; do
 		[ "$gomips64" = "." ] || printf ',"gomips64":"%s"' "$gomips64"
 		printf '}\n'
 	done
+
+	[ -z "$skipped" ] ||
+		echo "$release: outside the served families, skipped:$skipped" >&2
 done
