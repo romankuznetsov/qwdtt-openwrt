@@ -1,13 +1,11 @@
 name: SDK images
 
 # Publishes one image per SDK the build uses, with the SDK already unpacked
-# inside it. build.yml points gh-action-sdk at these through CONTAINER, so
-# every tag listed here must match an `arch:` or `sdk:` value over there --
-# a name that is not published fails the build with a pull error.
+# inside it. build.yml points gh-action-sdk at these through CONTAINER, and a
+# tag it names but this never published fails the build with a pull error.
 #
-# Run this after changing that list, and after moving an SDK version. Nothing
-# triggers it on a schedule: the versions are pinned, so a published image
-# stays correct until the pin moves.
+# Both read the same discovery script, so the two lists cannot drift. Run this
+# after moving OPENWRT_RELEASES, and after OpenWrt adds an architecture.
 
 on:
   workflow_dispatch:
@@ -16,6 +14,7 @@ on:
     paths:
       - .github/sdk.Dockerfile
       - .github/workflows/sdk-images.yml
+      - .github/scripts/openwrt-arches.sh
 
 permissions:
   contents: read
@@ -25,25 +24,39 @@ concurrency:
   group: sdk-images
   cancel-in-progress: false
 
+env:
+  # Kept in step with build.yml by hand for now; both name the same releases.
+  OPENWRT_RELEASES: "24.10.8 25.12.5"
+
 jobs:
+  arches:
+    name: arches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Discover the package architectures
+        id: discover
+        run: |
+          set -eu
+          # shellcheck disable=SC2086
+          list=$(.github/scripts/openwrt-arches.sh $OPENWRT_RELEASES | jq -r .sdk)
+          printf '%s\n' "$list"
+          printf 'matrix=%s\n' "$(printf '%s\n' "$list" | jq -Rcs 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
   bake:
     name: bake ${{ matrix.sdk }}
+    needs: arches
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        sdk:
-          - x86_64-24.10.8
-          - x86_64-25.12.5
-          - aarch64_cortex-a53-24.10.8
-          - aarch64_cortex-a53-25.12.5
-          - arm_cortex-a7_neon-vfpv4-24.10.8
-          - arm_cortex-a7_neon-vfpv4-25.12.5
-          - mipsel_24kc-24.10.8
-          - mipsel_24kc-25.12.5
-          - mips_24kc-24.10.8
-          - mips_24kc-25.12.5
+        sdk: ${{ fromJSON(needs.arches.outputs.matrix) }}
 
     steps:
       - name: Check out

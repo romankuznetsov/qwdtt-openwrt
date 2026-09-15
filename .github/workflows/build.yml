@@ -40,6 +40,9 @@ concurrency:
 
 env:
   GO_VERSION: "1.26.x"
+  # The OpenWrt releases to build for. The architectures under each are
+  # discovered; only the releases are named.
+  OPENWRT_RELEASES: "24.10.8 25.12.5"
 
 jobs:
   # Most of the pipeline is wasted on a docs-only change. Diff it here and let
@@ -334,9 +337,32 @@ jobs:
           path: logs/
           if-no-files-found: ignore
 
+  # The architectures are discovered from downloads.openwrt.org rather than
+  # listed here, so one OpenWrt adds is built without an edit. It runs on every
+  # event: gating it on tags would skip it, and a skipped job skips the matrix
+  # that depends on it.
+  arches:
+    name: arches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Discover the package architectures
+        id: discover
+        run: |
+          set -eu
+          # shellcheck disable=SC2086
+          list=$(.github/scripts/openwrt-arches.sh $OPENWRT_RELEASES)
+          printf '%s\n' "$list"
+          printf 'matrix=%s\n' "$(printf '%s\n' "$list" | jq -cs .)" >> "$GITHUB_OUTPUT"
+
   client-packages:
     name: client package ${{ matrix.sdk }}
-    needs: check
+    needs: [check, arches]
     # Tags only, plus manual dispatch so a packaging change can be proven
     # across every architecture without spending a tag to find out.
     if: >-
@@ -350,39 +376,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The binary is architecture-specific, so this needs one build per
-        # target -- and once per package format, since 24.10 emits .ipk and
-        # 25.12 .apk from the same sources. The first two arches are the
-        # routers this is deployed to; the rest are what most consumer
-        # hardware runs -- mipsel_24kc covers ramips, mips_24kc the same core
-        # big-endian for ath79 and lantiq, arm_cortex-a7 mt7621 and ipq40xx.
-        include:
-          - sdk: x86_64-25.12.5
-            goarch: amd64
-          - sdk: aarch64_cortex-a53-25.12.5
-            goarch: arm64
-          - sdk: arm_cortex-a7_neon-vfpv4-25.12.5
-            goarch: arm
-            goarm: "7"
-          - sdk: mipsel_24kc-25.12.5
-            goarch: mipsle
-            gomips: softfloat
-          - sdk: mips_24kc-25.12.5
-            goarch: mips
-            gomips: softfloat
-          - sdk: x86_64-24.10.8
-            goarch: amd64
-          - sdk: aarch64_cortex-a53-24.10.8
-            goarch: arm64
-          - sdk: arm_cortex-a7_neon-vfpv4-24.10.8
-            goarch: arm
-            goarm: "7"
-          - sdk: mipsel_24kc-24.10.8
-            goarch: mipsle
-            gomips: softfloat
-          - sdk: mips_24kc-24.10.8
-            goarch: mips
-            gomips: softfloat
+        include: ${{ fromJSON(needs.arches.outputs.matrix) }}
 
     steps:
       - name: Check out
@@ -402,6 +396,8 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           GOARM: ${{ matrix.goarm }}
           GOMIPS: ${{ matrix.gomips }}
+          # 64-bit MIPS reads this one; GOMIPS is ignored there.
+          GOMIPS64: ${{ matrix.gomips64 }}
         run: go build -tags=openwrt -trimpath -ldflags="-s -w" -o ../qwdtt-client/files/qwdtt-client .
 
       - name: Log in to ghcr.io
