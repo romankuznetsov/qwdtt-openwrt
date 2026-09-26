@@ -202,14 +202,14 @@ uci add_list network.qwdtt0.hash='ХЕШ_ЗВОНКА'
 uci set network.qwdtt0_rule=rule
 uci set network.qwdtt0_rule.in='lan'
 uci set network.qwdtt0_rule.lookup='51820'
-uci set network.qwdtt0_rule.priority='10000'
+uci set network.qwdtt0_rule.priority='9999'
 
 uci set network.qwdtt0_killswitch=route
 uci set network.qwdtt0_killswitch.interface='loopback'
 uci set network.qwdtt0_killswitch.target='0.0.0.0/0'
 uci set network.qwdtt0_killswitch.type='unreachable'
 uci set network.qwdtt0_killswitch.table='51820'
-uci set network.qwdtt0_killswitch.metric='4096'
+uci set network.qwdtt0_killswitch.metric='1000000'
 
 uci commit network
 ifup qwdtt0
@@ -229,6 +229,26 @@ ifup qwdtt0
 
 Вернется ли туннель после перезагрузки, решает не это, а `option disabled` и
 `option auto` - обычные настройки интерфейса.
+
+### Если на роутере уже есть mwan3, pbr или WireGuard
+
+Обе эти проверки стоит сделать до того, как туннель понадобится: в обоих
+случаях он поднимается, показывает полный набор воркеров и при этом не везет
+ничего.
+
+**Правило туннеля читается не первым.** Правило, которое отправляет локальную
+сеть в таблицу туннеля, получает приоритет 9999, а каждый следующий туннель -
+на единицу меньше. Правило с меньшим номером спрашивается раньше. mwan3 и pbr
+ставят свои правила сильно ниже этого и вдобавок метят проходящий трафик, так
+что на роутере с ними локальная сеть уйдет через WAN, а туннель об этом не
+узнает. Посмотрите `ip rule show`: все, что выше строки с таблицей туннеля,
+спрашивается раньше нее.
+
+**Таблица 51820 - это таблица wg-quick по умолчанию.** Свободный номер для
+`ip4table` подбирается только среди интерфейсов netifd, а wg-quick своих
+интерфейсов там не заводит и потому невидим. Если на роутере есть wg-quick,
+проверьте `ip route show table 51820` и при необходимости задайте туннелю
+другой номер.
 
 ## Что происходит, пока туннель переподключается
 
@@ -279,8 +299,14 @@ ip route show table 51820
 ```
 
 В таблице туннеля должно быть два маршрута по умолчанию: через `qwdtt0` и
-`unreachable` с метрикой 4096. Если остался только второй, туннель лежит и
+`unreachable` с большой метрикой. Если остался только второй, туннель лежит и
 kill switch работает.
+
+Метрика у `unreachable` намеренно огромная: она нужна только для того, чтобы
+этот маршрут проигрывал маршруту самого туннеля. netifd переносит на маршруты
+интерфейса его собственную `option metric`, поэтому туннель с метрикой выше,
+чем у kill switch, проиграл бы своему же kill switch - трафик локальной сети
+отбрасывался бы, а туннель при этом оставался бы поднятым.
 
 Если туннель не поднимается, причина написана на самой странице интерфейса:
 `No server address is set`, `The connection password belongs to another device
